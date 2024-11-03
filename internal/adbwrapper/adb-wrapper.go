@@ -1,4 +1,4 @@
-package main
+package adbwrapper
 
 import (
 	"bufio"
@@ -61,10 +61,13 @@ func DevicesStdOutToDevices(output []byte) []Device {
 }
 
 func CopyFileToDevice(device Device, src string) error {
-	fmt.Printf("Copying %v to %v on %v\n", src, device.WriteDir, device.Name)
+	pathComponents := strings.Split(src, "/")
+	fileName := pathComponents[len(pathComponents)-1]
+	fmt.Printf("---> %v -> %v:%v...", fileName, device.Name, device.WriteDir)
 	res, err := exec.Command("adb", "-s", device.Name, "push", src, device.WriteDir).CombinedOutput()
 	if err != nil {
 		return errors.New(string(res))
 	}
+	fmt.Println("done")
 	return nil
 }
