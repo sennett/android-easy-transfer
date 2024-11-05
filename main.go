@@ -44,7 +44,7 @@ func main() {
 
 	fileTarget := path.Join(cwd, "filetarget")
 
-	fmt.Printf("Watching for new files in %v...", fileTarget)
+	fmt.Printf("Watching for new files in %v...\n", fileTarget)
 
 	// watch for files
 	newFile := make(chan watcher.ChanPayload)

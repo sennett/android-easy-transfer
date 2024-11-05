@@ -3,9 +3,11 @@ package adbwrapper
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -51,7 +53,6 @@ func DevicesStdOutToDevices(output []byte) []Device {
 	}
 
 	for _, device := range devices {
-		//thing := &devices[i]
 		if device.Name == "" {
 			panic("Found empty device name - exiting")
 		}
@@ -64,10 +65,47 @@ func CopyFileToDevice(device Device, src string) error {
 	pathComponents := strings.Split(src, "/")
 	fileName := pathComponents[len(pathComponents)-1]
 	fmt.Printf("---> %v -> %v:%v...", fileName, device.Name, device.WriteDir)
-	res, err := exec.Command("adb", "-s", device.Name, "push", src, device.WriteDir).CombinedOutput()
+	wd, err := os.Getwd()
 	if err != nil {
-		return errors.New(string(res))
+		return err
 	}
+
+	wrapper := path.Join(wd, "redirectstdout.sh")
+
+	cmd := exec.Command(wrapper, "adb", "-s", device.Name, "push", "-p", src, device.WriteDir)
+	pipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	stopSignal := make(chan bool)
+
+	go func(p io.ReadCloser, stop chan bool) {
+		reader := bufio.NewReader(pipe)
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				line, _ := reader.ReadString('\r')
+				fmt.Println(line)
+				fmt.Println(len(line))
+				fmt.Println("here")
+				fmt.Println(err)
+			}
+		}
+	}(pipe, stopSignal)
+
+	err = cmd.Wait()
+	fmt.Println("stopping")
+	stopSignal <- true
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("done")
 	return nil
 }
