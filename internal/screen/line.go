@@ -2,7 +2,8 @@ package screen
 
 import (
 	"fmt"
-	"github.com/yudppp/throttle"
+	"github.com/boz/go-throttle"
+	"github.com/fatih/color"
 	"strings"
 	"time"
 )
@@ -29,35 +30,24 @@ func NewLine(device string, filenameAndPath string) *Line {
 
 func (l *Line) SetProgress(progress int) {
 	l.progress = progress
-	throttleRefresh()
+	throttleRefresh.Trigger()
 }
 
 func (l *Line) SetComplete() {
 	l.complete = true
-	throttleRefresh()
+	throttleRefresh.Trigger()
 }
 
-var throttler throttle.Throttler
-
-func getThrottler() *throttle.Throttler {
-	if throttler == nil {
-		var throttleDuration, err = time.ParseDuration("500ms")
-		if err != nil {
-			panic(err)
-		}
-		throttler = throttle.New(throttleDuration)
-	}
-	return &throttler
+func getDuration() time.Duration {
+	duration, _ := time.ParseDuration("500ms")
+	return duration
 }
 
-func throttleRefresh() {
-	throttler := *getThrottler()
-	throttler.Do(refresh)
-}
+var throttleRefresh = throttle.ThrottleFunc(getDuration(), true, refresh)
 
 func refresh() {
 	clearScreen()
-	for _, line := range lines {
+	for i, line := range lines {
 		progressBarWidth := 20
 		progressChars := ""
 		for i := 0; i < progressBarWidth; i++ {
@@ -72,6 +62,19 @@ func refresh() {
 			tick = "✅ "
 		}
 
-		fmt.Printf("%v %v %v -> %v\n", progressChars, tick, line.filename, line.device)
+		colorIndex := i % len(colorArray)
+		_, _ = colorArray[colorIndex].Printf("%v %v %v -> %v\n", progressChars, tick, line.filename, line.device)
+		//fmt.Printf("%v %v %v -> %v\n", progressChars, tick, line.filename, line.device)
 	}
+}
+
+var colorArray = []*color.Color{
+	color.New(color.FgHiRed),
+	color.RGB(255, 165, 0), // orange
+	color.RGB(200, 200, 0), // yellow
+	color.New(color.FgHiGreen),
+	color.New(color.FgHiCyan), // blue
+	color.RGB(64, 0, 255),     // indigo
+	color.RGB(143, 0, 255),    // violet
+	color.New(color.FgBlack),  // black because Macky
 }
