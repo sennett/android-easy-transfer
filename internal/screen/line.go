@@ -55,10 +55,19 @@ func throttleRefresh() {
 func refresh() {
 	clearScreen()
 	for _, line := range lines {
+		progressBarWidth := 20
+		progressChars := ""
+		for i := 0; i < progressBarWidth; i++ {
+			if i < line.progress*progressBarWidth/100 {
+				progressChars += "█"
+			} else {
+				progressChars += "_"
+			}
+		}
 		tick := fmt.Sprintf("%v%%", line.progress)
 		if line.complete {
 			tick = "✅ "
 		}
-		fmt.Printf("%v %v -> %v\n", tick, line.filename, line.device)
+		fmt.Printf("%v %v %v -> %v\n", progressChars, tick, line.filename, line.device)
 	}
 }

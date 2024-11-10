@@ -19,7 +19,7 @@ var clearFuncs = map[string]func(){
 		_ = cmd.Run()
 	},
 	"darwin": func() {
-		cmd := exec.Command("clearScreen") // osx
+		cmd := exec.Command("clear") // osx
 		cmd.Stdout = os.Stdout
 		_ = cmd.Run()
 	},
