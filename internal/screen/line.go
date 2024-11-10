@@ -3,6 +3,7 @@ package screen
 import (
 	"fmt"
 	"github.com/yudppp/throttle"
+	"strings"
 	"time"
 )
 
@@ -18,8 +19,10 @@ type Line struct {
 
 var lines = make([]*Line, 0)
 
-func NewLine(device string, filename string) *Line {
-	line := &Line{progress: 0, complete: false, device: device, filename: filename}
+func NewLine(device string, filenameAndPath string) *Line {
+	pathComponents := strings.Split(filenameAndPath, "/")
+	fileName := pathComponents[len(pathComponents)-1]
+	line := &Line{progress: 0, complete: false, device: device, filename: fileName}
 	lines = append(lines, line)
 	return line
 }
@@ -68,6 +71,7 @@ func refresh() {
 		if line.complete {
 			tick = "✅ "
 		}
+
 		fmt.Printf("%v %v %v -> %v\n", progressChars, tick, line.filename, line.device)
 	}
 }

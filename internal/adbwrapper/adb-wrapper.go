@@ -69,9 +69,6 @@ type Progress struct {
 }
 
 func CopyFileToDevice(device Device, src string, progressout chan<- Progress) error {
-	pathComponents := strings.Split(src, "/")
-	fileName := pathComponents[len(pathComponents)-1]
-	fmt.Printf("---> %v -> %v:%v...", fileName, device.Name, device.WriteDir)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
