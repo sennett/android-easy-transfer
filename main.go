@@ -2,6 +2,7 @@ package main
 
 import (
 	"adb-push-everywhere/internal/adbwrapper"
+	"adb-push-everywhere/internal/screen"
 	"adb-push-everywhere/internal/watcher"
 	"fmt"
 	"log"
@@ -47,16 +48,16 @@ func main() {
 	fmt.Printf("Watching for new files in %v...\n", fileTarget)
 
 	// watch for files
-	newFile := make(chan watcher.ChanPayload)
+	onNewFile := make(chan watcher.ChanPayload)
 	go func() {
-		err := watcher.WatchDir(fileTarget, newFile)
+		err := watcher.WatchDir(fileTarget, onNewFile)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 
 	for {
-		fileEvent := <-newFile
+		fileEvent := <-onNewFile
 		for _, device := range devices {
 			go copyFile(device, fileEvent.Filepath)
 		}
@@ -65,21 +66,23 @@ func main() {
 
 func copyFile(device adbwrapper.Device, file string) {
 	output := make(chan adbwrapper.Progress)
-	err := adbwrapper.CopyFileToDevice(device, file, output)
-	if err != nil {
-		fmt.Printf("Could not copy file %v to device %v\n", file, device.Name)
-		log.Fatal(err)
-		return
-	}
+	line := screen.NewLine(device.Name, file)
+	go func() {
+		err := adbwrapper.CopyFileToDevice(device, file, output)
+		if err != nil {
+			fmt.Printf("Could not copy file %v to device %v\n", file, device.Name)
+			panic(err)
+		}
+	}()
 	go func() {
 		fmt.Println("here")
 		for {
 			progress := <-output
+			line.SetProgress(progress.PercentComplete)
 			if progress.Done {
-				fmt.Printf("Done\n")
+				line.SetComplete()
 				return
 			}
-			fmt.Printf("%v%%\n", progress.PercentComplete)
 		}
 	}()
 }

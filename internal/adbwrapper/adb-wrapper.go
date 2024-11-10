@@ -107,9 +107,7 @@ func CopyFileToDevice(device Device, src string, progressout chan<- Progress) er
 		}
 	}(pipe, stopSignal)
 
-	fmt.Println("pre wait")
 	err = cmd.Wait()
-	fmt.Println("post wait")
 	stopSignal <- true
 	progressout <- Progress{PercentComplete: 100, Done: true}
 	close(progressout)

@@ -1,15 +1,10 @@
 # Todo
 
-You moved to a scanner.  Uncomment line 104 in adb-wrapper and find out why this is not being reported back up the chain.
-
-Or find how to update the CLI UI.  Perhaps a reference can be passed to `CopyFileToDevice` and the CLI UI can be updated directly. 
-
 # Usability notes
 
 Copying files to the device:
 
-- need to show in parallel
-- need to choose directory to upload to (listen to directory to copy entire directory, or have some CLI entry to create the directory - better - would need to copy another directory with a file in it, then delete the file)
+- need to choose directory to upload to (listen to directory to copy entire directory, or have some CLI input option to create the directory - better - would need to copy another directory with a file in it, then delete the file)
 
 
 # Setup
