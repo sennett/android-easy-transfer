@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -61,7 +63,12 @@ func DevicesStdOutToDevices(output []byte) []Device {
 	return devices
 }
 
-func CopyFileToDevice(device Device, src string) error {
+type Progress struct {
+	PercentComplete int // 0-100
+	Done            bool
+}
+
+func CopyFileToDevice(device Device, src string, progressout chan<- Progress) error {
 	pathComponents := strings.Split(src, "/")
 	fileName := pathComponents[len(pathComponents)-1]
 	fmt.Printf("---> %v -> %v:%v...", fileName, device.Name, device.WriteDir)
@@ -84,28 +91,54 @@ func CopyFileToDevice(device Device, src string) error {
 	stopSignal := make(chan bool)
 
 	go func(p io.ReadCloser, stop chan bool) {
-		reader := bufio.NewReader(pipe)
+		lines := make(chan string)
+		go readLines(lines, pipe)
 		for {
 			select {
 			case <-stop:
 				return
-			default:
-				line, _ := reader.ReadString('\r')
-				fmt.Println(line)
-				fmt.Println(len(line))
-				fmt.Println("here")
-				fmt.Println(err)
+			case line := <-lines:
+				//fmt.Println("line1", line)
+				if progress, err := extractFirstNumber(line); err == nil {
+					//fmt.Println("progress", progress)
+					progressout <- Progress{PercentComplete: progress, Done: false}
+				}
 			}
 		}
 	}(pipe, stopSignal)
 
+	fmt.Println("pre wait")
 	err = cmd.Wait()
-	fmt.Println("stopping")
+	fmt.Println("post wait")
 	stopSignal <- true
+	progressout <- Progress{PercentComplete: 100, Done: true}
+	close(progressout)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("done")
 	return nil
+}
+
+func readLines(lines chan<- string, pipe io.ReadCloser) {
+	defer close(lines)
+	scanner := bufio.NewScanner(pipe)
+	scanner.Split(bufio.ScanLines)
+	for scanner.Scan() {
+		lines <- scanner.Text()
+	}
+}
+
+func extractFirstNumber(str string) (int, error) {
+	re := regexp.MustCompile(`\d+%`)
+	match := re.FindString(str)
+	if match == "" {
+		return 0, fmt.Errorf("no number found in string")
+	}
+	match = strings.TrimSuffix(match, "%")
+	num, err := strconv.Atoi(match)
+	if err != nil {
+		return 0, err
+	}
+	return num, nil
 }

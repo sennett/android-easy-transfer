@@ -64,10 +64,22 @@ func main() {
 }
 
 func copyFile(device adbwrapper.Device, file string) {
-	err := adbwrapper.CopyFileToDevice(device, file)
+	output := make(chan adbwrapper.Progress)
+	err := adbwrapper.CopyFileToDevice(device, file, output)
 	if err != nil {
 		fmt.Printf("Could not copy file %v to device %v\n", file, device.Name)
 		log.Fatal(err)
 		return
 	}
+	go func() {
+		fmt.Println("here")
+		for {
+			progress := <-output
+			if progress.Done {
+				fmt.Printf("Done\n")
+				return
+			}
+			fmt.Printf("%v%%\n", progress.PercentComplete)
+		}
+	}()
 }
