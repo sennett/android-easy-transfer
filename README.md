@@ -15,6 +15,13 @@ Preparing device:
 
 ADB source code: https://android.googlesource.com/platform/packages/modules/adb/
 
+More ADB info: https://android.googlesource.com/platform/packages/modules/adb/+/HEAD/docs/dev/overview.md
+
+Embedding other binaries:
+
+- https://medium.com/dtoebe/embed-other-binaries-in-golang-binary-3f613314884c
+- golang `embed` package: https://pkg.go.dev/embed
+
 # Testing
 
 ## Copying a file
